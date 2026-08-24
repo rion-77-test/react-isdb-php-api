@@ -10,15 +10,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once "../config/db.php";
-require_once "../helpers/img-upload-helper.php";
+// require_once "../helpers/img-upload-helper.php";
+foreach (glob("../helpers/*-helper.php") as $modalfile) {
+    require_once $modalfile;
+}
+
+
 // require_once "../model/user.class.php";
-foreach(glob("../model/*.class.php") as $modalfile) {
+foreach (glob("../model/*.class.php") as $modalfile) {
     require_once $modalfile;
 }
 // require_once "user-api.php";
 // require_once "role-api.php";
-foreach(glob("*-api.php") as $apifile) {
+foreach (glob("*-api.php") as $apifile) {
     require_once $apifile;
+}
+
+if (!isset($_GET['endpoint']) || $_GET['endpoint'] == "") {
+    http_response_code(404);
+    echo "<h2>No endpoint found!</h2>";
+    exit;
 }
 
 if ($_GET['endpoint']) {
@@ -35,11 +46,14 @@ if ($_GET['endpoint']) {
     //     echo "No endpoint found!";
     // }
 
-    if ($endpoint == "users" && $method == "GET") {
+    if ($endpoint == "login" && $method == "POST") {
+        $data = json_decode(file_get_contents("php://input"), true);
+        checkLogin($data);
+    } elseif ($endpoint == "users" && $method == "GET") {
         // echo "<h2>Users</h2>";
         getUsers();
     } elseif ($endpoint == "user-create" && $method == "POST") {
-        $data = json_decode(file_get_contents("php://input"),true);
+        $data = json_decode(file_get_contents("php://input"), true);
         // print_r($data);
         // $data = [
         //     "name"      => "Shafi",
@@ -72,10 +86,24 @@ if ($_GET['endpoint']) {
         // print_r($_POST);
         // print_r($_FILES);
         createProduct($_POST, $_FILES);
-    } else {
-        http_response_code(404);
+    } elseif ($endpoint == "new-token") {
+        $data = [
+            "user_id" => 1,
+            "name" => "Mina",
+            "role_id" => 1,
+        ];
+        echo generateJWT($data);
+    } elseif ($endpoint == "check-token") {
+        $header = getallheaders();
+        $jwt =  explode(" ", $header["Authorization"]);
+        // print_r($jwt[1]);
+        // print_r(validateJWT($jwt[1]));
+        $valid = validateJWT($jwt[1]);
+        if ($valid) {
+            echo json_encode($valid);
+        } else {
+            http_response_code(401);
+            echo "Unauthorized. Please Login Again";
+        }
     }
-} else {
-    http_response_code(404);
-    echo "<h2>No endpoint found!</h2>";
 }

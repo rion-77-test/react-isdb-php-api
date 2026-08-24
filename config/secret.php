@@ -1,2 +1,6 @@
 <?php
-$jwt_secret = "jwt123";
+
+return [
+    'secret_key_jwt' => 'idb70fasdfasdfasdfsadffg3423dfasdfasdfwerwerwerwerwersafasdf',
+];
+
